@@ -191,6 +191,7 @@ class Predictor(BasePredictor):
     def predict(
         self,
         Prompt: str = cog.Input(description="Your text prompt.", default=""),
+        Modifiers: str = cog.Input(description="One of ['cyber', 'cgsociety', 'pixar']", default="cyber"),
         Steps: int = cog.Input(description="Number of steps to run the model", default=100),
         ETA: int = cog.Input(description="Can be 0 or 1", default=1),
         Samples_in_parallel: int = cog.Input(description="Batch size", default=4),
@@ -199,7 +200,8 @@ class Predictor(BasePredictor):
         Height: int = cog.Input(description="Height", default=256)
     ) -> None:
         """Run a single prediction on the model"""
-        Prompts = Prompt
+        
+        Prompts = modify(Prompt, Modifiers)
 
         Iterations = 1
         output_path = "/outputs"
@@ -295,3 +297,15 @@ def clean_folder(folder):
                 shutil.rmtree(file_path)
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+
+def modify(Prompt, Modifiers):
+    if Modifiers == "cyber":
+        return f"cyber cyber {Prompt} {Prompt} {Prompt} digital art by michael whelan"
+    if Modifiers == "cgsociety":
+        return f"{Prompt} {Prompt} {Prompt} digital art by michael whelan by cgsociety , cyberpunk"
+    if Modifiers == "pixar":
+        return f"{Prompt} {Prompt} {Prompt} by pixar 3d render"
+    print("Unknown modifier:", Modifiers)
+    return Prompt
+         
