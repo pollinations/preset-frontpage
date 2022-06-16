@@ -41,8 +41,6 @@ import numpy as np
 from main_test_swinir import define_model, setup, get_image_pair
 
 
-from predict import Predictor # swin
-
 import os
 
 
@@ -127,7 +125,7 @@ class Predictor(BasePredictor):
         }
 
     def upscale(self, input_dir, output_dir, task_type='Real-World Image Super-Resolution', jpeg=40, noise=15):
-
+        os.makedirs(output_dir, exist_ok=True)
         self.args.task = self.tasks[task_type]
         self.args.noise = noise
         self.args.jpeg = jpeg
@@ -154,40 +152,41 @@ class Predictor(BasePredictor):
         folder, save_dir, border, window_size = setup(self.args)
         os.makedirs(save_dir, exist_ok=True)
 
-        for input_file in os.listdir(input_dir):
-            out_path = input_file.replace(input_dir, output_dir)
-            test_results = OrderedDict()
-            test_results['psnr'] = []
-            test_results['ssim'] = []
-            test_results['psnr_y'] = []
-            test_results['ssim_y'] = []
-            test_results['psnr_b'] = []
-            # psnr, ssim, psnr_y, ssim_y, psnr_b = 0, 0, 0, 0, 0
+            
+        test_results = OrderedDict()
+        test_results['psnr'] = []
+        test_results['ssim'] = []
+        test_results['psnr_y'] = []
+        test_results['ssim_y'] = []
+        test_results['psnr_b'] = []
+        # psnr, ssim, psnr_y, ssim_y, psnr_b = 0, 0, 0, 0, 0
 
-            for idx, path in enumerate(sorted(glob.glob(os.path.join(folder, '*')))):
-                # read image
-                imgname, img_lq, img_gt = get_image_pair(self.args, path)  # image to HWC-BGR, float32
-                img_lq = np.transpose(img_lq if img_lq.shape[2] == 1 else img_lq[:, :, [2, 1, 0]],
-                                      (2, 0, 1))  # HCW-BGR to CHW-RGB
-                img_lq = torch.from_numpy(img_lq).float().unsqueeze(0).to(self.device)  # CHW-RGB to NCHW-RGB
+        for idx, path in enumerate(sorted(glob.glob(os.path.join(folder, '*')))):
+            print("upscaling", path)
+            out_path = path.replace(input_dir, output_dir)
+            # read image
+            imgname, img_lq, img_gt = get_image_pair(self.args, path)  # image to HWC-BGR, float32
+            img_lq = np.transpose(img_lq if img_lq.shape[2] == 1 else img_lq[:, :, [2, 1, 0]],
+                                    (2, 0, 1))  # HCW-BGR to CHW-RGB
+            img_lq = torch.from_numpy(img_lq).float().unsqueeze(0).to(self.device)  # CHW-RGB to NCHW-RGB
 
-                # inference
-                with torch.no_grad():
-                    # pad input image to be a multiple of window_size
-                    _, _, h_old, w_old = img_lq.size()
-                    h_pad = (h_old // window_size + 1) * window_size - h_old
-                    w_pad = (w_old // window_size + 1) * window_size - w_old
-                    img_lq = torch.cat([img_lq, torch.flip(img_lq, [2])], 2)[:, :, :h_old + h_pad, :]
-                    img_lq = torch.cat([img_lq, torch.flip(img_lq, [3])], 3)[:, :, :, :w_old + w_pad]
-                    output = model(img_lq)
-                    output = output[..., :h_old * self.args.scale, :w_old * self.args.scale]
+            # inference
+            with torch.no_grad():
+                # pad input image to be a multiple of window_size
+                _, _, h_old, w_old = img_lq.size()
+                h_pad = (h_old // window_size + 1) * window_size - h_old
+                w_pad = (w_old // window_size + 1) * window_size - w_old
+                img_lq = torch.cat([img_lq, torch.flip(img_lq, [2])], 2)[:, :, :h_old + h_pad, :]
+                img_lq = torch.cat([img_lq, torch.flip(img_lq, [3])], 3)[:, :, :, :w_old + w_pad]
+                output = model(img_lq)
+                output = output[..., :h_old * self.args.scale, :w_old * self.args.scale]
 
-                # save image
-                output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
-                if output.ndim == 3:
-                    output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
-                output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
-                cv2.imwrite(str(out_path), output)
+            # save image
+            output = output.data.squeeze().float().cpu().clamp_(0, 1).numpy()
+            if output.ndim == 3:
+                output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
+            output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
+            cv2.imwrite(str(out_path), output)
 
     def predict(
         self,
@@ -207,30 +206,6 @@ class Predictor(BasePredictor):
         PLMS_sampling=True
 
         
-        os.system(f"rm -rf /content/steps")
-        os.makedirs("/content/steps", exist_ok=True)
-
-        frames = []
-        def save_img_callback(pred_x0, i):
-            # print(pred_x0)
-            frame_id = len(frames)
-            x_samples_ddim = self.model.decode_first_stage(pred_x0)
-            imgs = torch.clamp((x_samples_ddim+1.0)/2.0, min=0.0, max=1.0)
-            grid = imgs
-            #grid = rearrange(grid, 'n b c h w -> (n b) c h w')
-            rows = len(imgs)
-            # check if rows is quadratic and if yes take the square root
-            height = int(rows**0.5)
-            grid = make_grid(imgs, nrow=height)
-            # to image
-            grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
-            step_out = os.path.join("/content/steps", f'aaa_{frame_id:04}.png')
-            Image.fromarray(grid.astype(np.uint8)).save(step_out)
-
-            if frame_id % 10 == 0:
-                progress_out = os.path.join(output_path, "aaa_progress.png") 
-                Image.fromarray(grid.astype(np.uint8)).save(progress_out)
-            frames.append(frame_id)
 
         def run(opt):
             torch.cuda.empty_cache()
@@ -266,7 +241,6 @@ class Predictor(BasePredictor):
                                                                 batch_size=opt.n_samples,
                                                                 shape=shape,
                                                                 verbose=False,
-                                                                img_callback=save_img_callback,
                                                                 unconditional_guidance_scale=opt.scale,
                                                                 unconditional_conditioning=uc,
                                                                 eta=opt.ddim_eta,
@@ -286,13 +260,14 @@ class Predictor(BasePredictor):
                 grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
                 #Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f'zzz_{prompt.replace(" ", "-")}.png'))
                 # save individual images
+                os.makedirs("/content/tmp", exist_ok=True)
+                clean_folder("/content/tmp")
                 for n,x_sample in enumerate(all_samples[0]):
                     x_sample = x_sample.squeeze()
                     x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                     prompt_filename = prompt.replace(" ", "-")
-                    Image.fromarray(x_sample.astype(np.uint8)).save(os.path.join(output_path, f"{output_path}/yyy_{prompt_filename}_{n}.png"))
+                    Image.fromarray(x_sample.astype(np.uint8)).save(os.path.join(output_path, f"/content/tmp/{prompt_filename}_{n}.png"))
 
-        os.system(f"rm {output_path}/aaa_*.png")
 
         args = argparse.Namespace(
             prompts = Prompts.split("->"), 
@@ -307,11 +282,16 @@ class Predictor(BasePredictor):
             plms=PLMS_sampling
         )
         run(args)
+        self.upscale("content/tmp", output_path)
+        
 
-        # last_frame=!ls -w1 -t /content/steps/*.png | head -1
-        # last_frame = last_frame[0]
-        # !cp -v $last_frame /content/steps/aaa_0000.png
-        # !cp -v $last_frame /content/steps/aaa_0001.png
-        self.upscale("/content/steps", "/content/steps-upscaled")
-        encoding_options = "-c:v libx264 -crf 20 -preset slow -vf format=yuv420p -c:a aac -movflags +faststart"
-        os.system(f"ffmpeg -y -r 10 -i /content/steps-upscaled/aaa_%04d.png {encoding_options} {output_path}/zzz_output.mp4")
+def clean_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))

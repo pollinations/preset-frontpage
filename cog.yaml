@@ -29,7 +29,6 @@ build:
     - "autokeras==1.0.19"
     - "timm==0.4.12"
     - "opencv-python==4.4.0.46"
-    - "Pillow==8.3.2"
   
   # commands run after the environment is setup
   run:
@@ -40,8 +39,7 @@ build:
     - mkdir -p /content/models/
     - wget -O /content/models/ldm-model.ckpt https://ipfs.pollinations.ai/ipfs/QmUKTHwT9nWtPp1bes3VGjQRk8gizKvTo6s4cNgsoM1Jpk/model.ckpt
     - git clone https://github.com/voodoohop/SwinIR
-    - wget -c "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth" -P experiments/pretrained_models
-
+    - wget -c "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth" -P /src/experiments/pretrained_models
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
