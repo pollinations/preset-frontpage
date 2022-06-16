@@ -282,7 +282,7 @@ class Predictor(BasePredictor):
             plms=PLMS_sampling
         )
         run(args)
-        self.upscale("content/tmp", output_path)
+        self.upscale("/content/tmp", output_path)
         
 
 def clean_folder(folder):
