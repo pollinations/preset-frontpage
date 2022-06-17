@@ -1,47 +1,37 @@
 # Prediction interface for Cog ⚙️
 # https://github.com/replicate/cog/blob/main/docs/python.md
 
-from cog import BasePredictor, Input, Path
-import sys
-import cog
-# sys.path.append(".")
-# sys.path.append('./taming-transformers')
-from taming.models import vqgan 
-import torch
-from omegaconf import OmegaConf
-
-from ldm.util import instantiate_from_config
-
-import argparse, os, sys, glob
-import torch
-import numpy as np
-from omegaconf import OmegaConf
-from PIL import Image
-from tqdm import tqdm, trange
-from einops import rearrange
-from torchvision.utils import make_grid
-import transformers
+import argparse
 import gc
-from ldm.util import instantiate_from_config
+import glob
+import os
+import shutil
+import sys
+import tempfile
+from collections import OrderedDict
+from pathlib import Path
+
+import cog
+import cv2
+import numpy as np
+import open_clip
+import torch
+import transformers
+from cog import BasePredictor, Input, Path
+from einops import rearrange
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
+from ldm.util import instantiate_from_config
+from omegaconf import OmegaConf
 from open_clip import tokenizer
-import open_clip
-import argparse
-import tempfile
-from pathlib import Path
-import argparse
-import shutil
-import os
-import cv2
-import glob
-import torch
-from collections import OrderedDict
-import numpy as np
-from main_test_swinir import define_model, setup, get_image_pair
+from PIL import Image
+# sys.path.append(".")
+# sys.path.append('./taming-transformers')
+from taming.models import vqgan
+from torchvision.utils import make_grid
+from tqdm import tqdm, trange
 
-
-import os
+from main_test_swinir import define_model, get_image_pair, setup
 
 
 class Predictor(BasePredictor):
@@ -191,7 +181,6 @@ class Predictor(BasePredictor):
     def predict(
         self,
         Prompt: str = cog.Input(description="Your text prompt.", default=""),
-        Modifiers: str = cog.Input(description="One of ['cyber', 'cgsociety', 'pixar']", default="cyber"),
         Steps: int = cog.Input(description="Number of steps to run the model", default=100),
         ETA: int = cog.Input(description="Can be 0 or 1", default=1),
         Samples_in_parallel: int = cog.Input(description="Batch size", default=4),
@@ -200,15 +189,12 @@ class Predictor(BasePredictor):
         Height: int = cog.Input(description="Height", default=256)
     ) -> None:
         """Run a single prediction on the model"""
-        
-        Prompts = modify(Prompt, Modifiers)
 
         Iterations = 1
         output_path = "/outputs"
         PLMS_sampling=True
 
         
-
         def run(opt):
             torch.cuda.empty_cache()
             gc.collect()
@@ -271,19 +257,22 @@ class Predictor(BasePredictor):
                     Image.fromarray(x_sample.astype(np.uint8)).save(os.path.join(output_path, f"/content/tmp/{prompt_filename}_{n}.png"))
 
 
-        args = argparse.Namespace(
-            prompts = Prompts.split("->"), 
-            outdir=output_path,
-            ddim_steps = Steps,
-            ddim_eta = ETA,
-            n_iter = Iterations,
-            W=Width,
-            H=Height,
-            n_samples=Samples_in_parallel,
-            scale=Diversity_scale,
-            plms=PLMS_sampling
-        )
-        run(args)
+        Modifiers = ['cyber', 'cgsociety', 'pixar']
+        for Modifier in Modifiers:
+            Prompts = modify(Prompt, Modifier)
+            args = argparse.Namespace(
+                prompts = Prompts.split("->"), 
+                outdir=output_path,
+                ddim_steps = Steps,
+                ddim_eta = ETA,
+                n_iter = Iterations,
+                W=Width,
+                H=Height,
+                n_samples=Samples_in_parallel,
+                scale=Diversity_scale,
+                plms=PLMS_sampling
+            )
+            run(args)
         self.upscale("/content/tmp", output_path)
         
 
