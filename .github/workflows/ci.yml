@@ -63,8 +63,8 @@ jobs:
           ECR_REPOSITORY: ${{ github.repository }}
           IMAGE_TAG: latest
         run: |
-          docker tag image:test $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # docker tag image:test $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker inspect image:test > inspect.json
           python .github/workflows/extract_openapi.py
       
@@ -78,7 +78,7 @@ jobs:
           git config --global user.email "ci@pollinations.ai"
           git config --global user.name "pollinations-ci"
           mkdir ~/.ssh
-          # echo $SSH_KEY > ~/.ssh/id_rsa
+          echo $SSH_KEY > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           git clone git@github.com:pollinations/model-index.git
           python model-index/add_image.py ${{ github.repository }} $ECR_REGISTRY/$ECR_REPOSITORY
