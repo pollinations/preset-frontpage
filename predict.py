@@ -340,10 +340,9 @@ class Predictor(BasePredictor):
                     x_sample = 255.0 * rearrange(
                         x_sample.cpu().numpy(), "c h w -> h w c"
                     )
-                    prompt_filename = prompt.replace(" ", "-")
                     Image.fromarray(x_sample.astype(np.uint8)).save(
                         os.path.join(
-                            output_path, f"/content/tmp/{prompt_filename}_{n}.png"
+                            output_path, f"/content/tmp/{opt.filename}_{n}.png"
                         )
                     )
 
@@ -352,6 +351,7 @@ class Predictor(BasePredictor):
             Prompts = modify(Prompt, Modifier)
             args = argparse.Namespace(
                 prompts=Prompts.split("->"),
+                filename=Prompt.replace(" " , "-"),
                 outdir=output_path,
                 ddim_steps=Steps,
                 ddim_eta=ETA,
