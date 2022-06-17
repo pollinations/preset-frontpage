@@ -65,12 +65,9 @@ jobs:
         run: |
           docker tag image:test $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-      
-      - name: Extract openapi.json
-        run: |
-          docker inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG > inspect.json
+          docker inspect image:test > inspect.json
           python .github/workflows/extract_openapi.py
-        
+      
       - name: Update model registry
         env:
           ECR_REGISTRY: 614871946825.dkr.ecr.us-east-1.amazonaws.com #${{ steps.login-ecr.outputs.registry }}
