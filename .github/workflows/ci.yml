@@ -20,12 +20,12 @@ jobs:
       - name: Install linters
         run: pip install black flake8 isort
 
-      - name: linting
-        run: |
-          isort --diff .
-          black --check .
-          flake8
-      # - run: pytest --cov --cov-fail-under=80
+      # - name: linting
+      #   run: |
+      #     isort --diff .
+      #     black --check .
+      #     flake8
+      # # - run: pytest --cov --cov-fail-under=80
 
   docker-image:
     runs-on: ubuntu-latest
