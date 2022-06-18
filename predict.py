@@ -25,7 +25,6 @@ from ldm.util import instantiate_from_config
 from omegaconf import OmegaConf
 from open_clip import tokenizer
 from PIL import Image
-
 # sys.path.append(".")
 # sys.path.append('./taming-transformers')
 from taming.models import vqgan
@@ -351,7 +350,7 @@ class Predictor(BasePredictor):
             Prompts = modify(Prompt, Modifier)
             args = argparse.Namespace(
                 prompts=Prompts.split("->"),
-                filename=Prompt.replace(" " , "-"),
+                filename=Modifier+"_"+Prompt.replace(" " , "-"),
                 outdir=output_path,
                 ddim_steps=Steps,
                 ddim_eta=ETA,
