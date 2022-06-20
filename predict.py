@@ -290,37 +290,36 @@ class Predictor(BasePredictor):
             with torch.no_grad():
                 with torch.cuda.amp.autocast():
                     with self.model.ema_scope():
-                        uc = None
                         if opt.scale > 0:
                             uc = self.model.get_learned_conditioning(
                                 opt.n_samples * [""]
                             )
-                        for prompt in opt.prompts:
-                            print(prompt)
-                            for n in range(opt.n_iter):
-                                c = self.model.get_learned_conditioning(
-                                    opt.n_samples * [prompt]
-                                )
-                                shape = [4, opt.H // 8, opt.W // 8]
-                                samples_ddim, _ = sampler.sample(
-                                    S=opt.ddim_steps,
-                                    conditioning=c,
-                                    batch_size=opt.n_samples,
-                                    shape=shape,
-                                    verbose=False,
-                                    unconditional_guidance_scale=opt.scale,
-                                    unconditional_conditioning=uc,
-                                    eta=opt.ddim_eta,
-                                    x_T=samples_ddim,
-                                )
+                        prompt = opt.prompt
+                        print(prompt)
+                        for n in range(opt.n_iter):
+                            c = self.model.get_learned_conditioning(
+                                opt.n_samples * [prompt]
+                            )
+                            shape = [4, opt.H // 8, opt.W // 8]
+                            samples_ddim, _ = sampler.sample(
+                                S=opt.ddim_steps,
+                                conditioning=c,
+                                batch_size=opt.n_samples,
+                                shape=shape,
+                                verbose=False,
+                                unconditional_guidance_scale=opt.scale,
+                                unconditional_conditioning=None,
+                                eta=opt.ddim_eta,
+                                # x_T=samples_ddim,
+                            )
 
-                                x_samples_ddim = self.model.decode_first_stage(
-                                    samples_ddim
-                                )
-                                x_samples_ddim = torch.clamp(
-                                    (x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0
-                                )
-                                all_samples.append(x_samples_ddim)
+                            x_samples_ddim = self.model.decode_first_stage(
+                                samples_ddim
+                            )
+                            x_samples_ddim = torch.clamp(
+                                (x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0
+                            )
+                            all_samples.append(x_samples_ddim)
                 # additionally, save as grid
                 grid = torch.stack(all_samples, 0)
                 grid = rearrange(grid, "n b c h w -> (n b) c h w")
@@ -347,9 +346,9 @@ class Predictor(BasePredictor):
 
         Modifiers = ["cyber", "cgsociety", "pixar"]
         for Modifier in Modifiers:
-            Prompts = modify(Prompt, Modifier)
+            ModifiedPrompt = modify(Prompt, Modifier)
             args = argparse.Namespace(
-                prompts=Prompts.split("->"),
+                prompt=ModifiedPrompt,
                 filename=Modifier+"_"+Prompt.replace(" " , "-"),
                 outdir=output_path,
                 ddim_steps=Steps,
