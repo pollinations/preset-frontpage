@@ -341,10 +341,10 @@ class Predictor(BasePredictor):
                     x_sample = 255.0 * rearrange(
                         x_sample.cpu().numpy(), "c h w -> h w c"
                     )
-                    print("writing",  f"/content/tmp/{opt.filename}_{n}.png")
+                    print("writing",  f"{opt.filename}_{n}.png")
                     Image.fromarray(x_sample.astype(np.uint8)).save(
                         os.path.join(
-                            output_path, f"/content/tmp/{opt.filename}_{n}.png"
+                            output_path, f"{opt.filename}_{n}.png"
                         )
                     )
 
@@ -366,7 +366,7 @@ class Predictor(BasePredictor):
                 plms=PLMS_sampling,
             )
             run(args)
-        self.upscale("/content/tmp", output_path)
+        self.upscale(output_path, output_path)
 
 
 def clean_folder(folder):
