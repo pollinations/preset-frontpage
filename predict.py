@@ -208,7 +208,7 @@ class Predictor(BasePredictor):
         test_results["psnr_b"] = []
         # psnr, ssim, psnr_y, ssim_y, psnr_b = 0, 0, 0, 0, 0
 
-        input_files = sorted(glob.glob(os.path.join(folder, "*")))
+        input_files = sorted(glob.glob(os.path.join(folder, "*.png")))
         print("input_files", input_files)
         for idx, path in enumerate(input_files):
             print("upscaling", path)
