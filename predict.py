@@ -312,7 +312,7 @@ class Predictor(BasePredictor):
                                 shape=shape,
                                 verbose=False,
                                 unconditional_guidance_scale=opt.scale,
-                                unconditional_conditioning=None,
+                                unconditional_conditioning=uc,
                                 eta=opt.ddim_eta,
                                 # x_T=samples_ddim,
                             )
