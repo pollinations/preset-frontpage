@@ -208,7 +208,9 @@ class Predictor(BasePredictor):
         test_results["psnr_b"] = []
         # psnr, ssim, psnr_y, ssim_y, psnr_b = 0, 0, 0, 0, 0
 
-        for idx, path in enumerate(sorted(glob.glob(os.path.join(folder, "*")))):
+        input_files = sorted(glob.glob(os.path.join(folder, "*")))
+        print("input_files", input_files)
+        for idx, path in enumerate(input_files):
             print("upscaling", path)
             out_path = path.replace(input_dir, output_dir)
             # read image
@@ -269,6 +271,9 @@ class Predictor(BasePredictor):
         output_path = "/outputs"
         PLMS_sampling = True
 
+        os.makedirs("/content/tmp", exist_ok=True)
+        clean_folder("/content/tmp")
+        
         def run(opt):
             torch.cuda.empty_cache()
             gc.collect()
@@ -290,37 +295,35 @@ class Predictor(BasePredictor):
             with torch.no_grad():
                 with torch.cuda.amp.autocast():
                     with self.model.ema_scope():
-                        uc = None
                         if opt.scale > 0:
                             uc = self.model.get_learned_conditioning(
                                 opt.n_samples * [""]
                             )
-                        for prompt in opt.prompts:
-                            print(prompt)
-                            for n in range(opt.n_iter):
-                                c = self.model.get_learned_conditioning(
-                                    opt.n_samples * [prompt]
-                                )
-                                shape = [4, opt.H // 8, opt.W // 8]
-                                samples_ddim, _ = sampler.sample(
-                                    S=opt.ddim_steps,
-                                    conditioning=c,
-                                    batch_size=opt.n_samples,
-                                    shape=shape,
-                                    verbose=False,
-                                    unconditional_guidance_scale=opt.scale,
-                                    unconditional_conditioning=uc,
-                                    eta=opt.ddim_eta,
-                                    x_T=samples_ddim,
-                                )
+                        prompt = opt.prompt
+                        for n in range(opt.n_iter):
+                            c = self.model.get_learned_conditioning(
+                                opt.n_samples * [prompt]
+                            )
+                            shape = [4, opt.H // 8, opt.W // 8]
+                            samples_ddim, _ = sampler.sample(
+                                S=opt.ddim_steps,
+                                conditioning=c,
+                                batch_size=opt.n_samples,
+                                shape=shape,
+                                verbose=False,
+                                unconditional_guidance_scale=opt.scale,
+                                unconditional_conditioning=None,
+                                eta=opt.ddim_eta,
+                                # x_T=samples_ddim,
+                            )
 
-                                x_samples_ddim = self.model.decode_first_stage(
-                                    samples_ddim
-                                )
-                                x_samples_ddim = torch.clamp(
-                                    (x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0
-                                )
-                                all_samples.append(x_samples_ddim)
+                            x_samples_ddim = self.model.decode_first_stage(
+                                samples_ddim
+                            )
+                            x_samples_ddim = torch.clamp(
+                                (x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0
+                            )
+                            all_samples.append(x_samples_ddim)
                 # additionally, save as grid
                 grid = torch.stack(all_samples, 0)
                 grid = rearrange(grid, "n b c h w -> (n b) c h w")
@@ -332,13 +335,13 @@ class Predictor(BasePredictor):
                 grid = 255.0 * rearrange(grid, "c h w -> h w c").cpu().numpy()
                 # Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f'zzz_{prompt.replace(" ", "-")}.png'))
                 # save individual images
-                os.makedirs("/content/tmp", exist_ok=True)
-                clean_folder("/content/tmp")
                 for n, x_sample in enumerate(all_samples[0]):
+                    print("x_sample shape", x_sample.shape)
                     x_sample = x_sample.squeeze()
                     x_sample = 255.0 * rearrange(
                         x_sample.cpu().numpy(), "c h w -> h w c"
                     )
+                    print("writing",  f"/content/tmp/{opt.filename}_{n}.png")
                     Image.fromarray(x_sample.astype(np.uint8)).save(
                         os.path.join(
                             output_path, f"/content/tmp/{opt.filename}_{n}.png"
@@ -347,9 +350,10 @@ class Predictor(BasePredictor):
 
         Modifiers = ["cyber", "cgsociety", "pixar"]
         for Modifier in Modifiers:
-            Prompts = modify(Prompt, Modifier)
+            ModifiedPrompt = modify(Prompt, Modifier)
+            print("ModifiedPrompt", ModifiedPrompt)
             args = argparse.Namespace(
-                prompts=Prompts.split("->"),
+                prompt=ModifiedPrompt,
                 filename=Modifier+"_"+Prompt.replace(" " , "-"),
                 outdir=output_path,
                 ddim_steps=Steps,
