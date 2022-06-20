@@ -268,7 +268,7 @@ class Predictor(BasePredictor):
 
         Iterations = 1
         output_path = "/outputs"
-        PLMS_sampling = True
+        PLMS_sampling = False
 
         os.makedirs("/content/tmp", exist_ok=True)
         clean_folder("/content/tmp")
