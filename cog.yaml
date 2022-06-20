@@ -32,12 +32,12 @@ build:
   
   # commands run after the environment is setup
   run:
-    - git clone https://github.com/crowsonkb/latent-diffusion.git
+    - git clone https://github.com/multimodalart/latent-diffusion --branch 1.6
     - git clone https://github.com/CompVis/taming-transformers
     - pip install -e ./taming-transformers
     - pip install -e ./latent-diffusion
     - mkdir -p /content/models/
-    - wget -O /content/models/ldm-model.ckpt https://ipfs.pollinations.ai/ipfs/QmUKTHwT9nWtPp1bes3VGjQRk8gizKvTo6s4cNgsoM1Jpk/model.ckpt
+    - wget -O /content/models/ldm-model.ckpt https://huggingface.co/multimodalart/compvis-latent-diffusion-text2img-large/resolve/main/txt2img-f8-large-jack000-finetuned-fp16.ckpt
     - git clone https://github.com/voodoohop/SwinIR
     - wget -c "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth" -P /src/experiments/pretrained_models
 

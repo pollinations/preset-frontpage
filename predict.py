@@ -43,8 +43,7 @@ class Predictor(BasePredictor):
 
         def load_model_from_config(config, ckpt, verbose=False):
             print(f"Loading model from {ckpt}")
-            pl_sd = torch.load(ckpt, map_location="cuda:0")
-            sd = pl_sd["state_dict"]
+            sd = torch.load(ckpt, map_location="cuda:0")
             model = instantiate_from_config(config.model)
             m, u = model.load_state_dict(sd, strict=False)
             if len(m) > 0 and verbose:
@@ -67,7 +66,7 @@ class Predictor(BasePredictor):
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
         self.model = model.to(device)
-
+        self.device = device
         # SWIN
 
         model_dir = "experiments/pretrained_models"
@@ -305,6 +304,7 @@ class Predictor(BasePredictor):
                                 opt.n_samples * [prompt]
                             )
                             shape = [4, opt.H // 8, opt.W // 8]
+                            x_t = torch.randn([opt.n_samples,*shape], device=self.device)
                             samples_ddim, _ = sampler.sample(
                                 S=opt.ddim_steps,
                                 conditioning=c,
@@ -314,6 +314,11 @@ class Predictor(BasePredictor):
                                 unconditional_guidance_scale=opt.scale,
                                 unconditional_conditioning=uc,
                                 eta=opt.ddim_eta,
+                                eta_end=1.1,
+                                x_T=x_t,
+                                temperature=.98,
+                                x_adjust_fn=dynamic_thresholding
+                                                         
                                 # x_T=samples_ddim,
                             )
 
@@ -390,3 +395,8 @@ def modify(Prompt, Modifiers):
         return f"{Prompt} {Prompt} {Prompt} by pixar 3d render"
     print("Unknown modifier:", Modifiers)
     return Prompt
+
+
+
+def dynamic_thresholding(pred_x0,t):
+    return(pred_x0)
