@@ -353,7 +353,7 @@ class Predictor(BasePredictor):
                         )
                     )
 
-        Modifiers = ["cyber", "cgsociety", "pixar"]
+        Modifiers = ["cyber",  "futurist_3d", "illustration"]
         for Modifier in Modifiers:
             ModifiedPrompt = modify(Prompt, Modifier)
             print("ModifiedPrompt", ModifiedPrompt)
@@ -389,9 +389,9 @@ def clean_folder(folder):
 def modify(Prompt, Modifiers):
     if Modifiers == "cyber":
         return f"cyber cyber {Prompt} {Prompt} {Prompt} digital art by michael whelan"
-    if Modifiers == "cgsociety":
+    if Modifiers == "illustration":
         return f"{Prompt} {Prompt} {Prompt} digital art by michael whelan by cgsociety , cyberpunk"
-    if Modifiers == "pixar":
+    if Modifiers == "futurist_3d":
         return f"{Prompt} {Prompt} {Prompt} by pixar 3d render"
     print("Unknown modifier:", Modifiers)
     return Prompt
