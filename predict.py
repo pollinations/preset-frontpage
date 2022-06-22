@@ -390,7 +390,7 @@ def modify(Prompt, Modifiers):
     if Modifiers == "cyber":
         return f"cyber cyber. {Prompt}. {Prompt}. Digital art by michael whelan"
     if Modifiers == "illustration":
-        return f"{Prompt}. Trending on Artstation"
+        return f"{Prompt}. Ultra detailed, 8k. By Naoto Hattori. Trending on Artstation. {Prompt}."
     if Modifiers == "futurist_3d":
         return f"{Prompt} {Prompt} by pixar 3d render"
     print("Unknown modifier:", Modifiers)
