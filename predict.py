@@ -388,11 +388,11 @@ def clean_folder(folder):
 
 def modify(Prompt, Modifiers):
     if Modifiers == "cyber":
-        return f"cyber cyber {Prompt} {Prompt} {Prompt} digital art by michael whelan"
+        return f"cyber cyber. {Prompt}. {Prompt}. Digital art by michael whelan"
     if Modifiers == "illustration":
-        return f"{Prompt} {Prompt} {Prompt} digital art by michael whelan by cgsociety , cyberpunk"
+        return f"{Prompt}. Trending on Artstation"
     if Modifiers == "futurist_3d":
-        return f"{Prompt} {Prompt} {Prompt} by pixar 3d render"
+        return f"{Prompt} {Prompt} by pixar 3d render"
     print("Unknown modifier:", Modifiers)
     return Prompt
 
