@@ -388,7 +388,7 @@ def clean_folder(folder):
 
 def modify(Prompt, Modifiers):
     if Modifiers == "cyber":
-        return f"cyber cyber. {Prompt}. {Prompt}. Digital art by michael whelan"
+        return f"{Prompt}. Cyber. Digital art by michael whelan"
     if Modifiers == "illustration":
         return f"{Prompt}. Ultra detailed, 8k. By Naoto Hattori. Trending on Artstation. {Prompt}."
     if Modifiers == "futurist_3d":
