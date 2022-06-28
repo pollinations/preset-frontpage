@@ -346,15 +346,12 @@ class Predictor(BasePredictor):
                     x_sample = 255.0 * rearrange(
                         x_sample.cpu().numpy(), "c h w -> h w c"
                     )
-
-                    # Save Image
                     print("writing",  f"{opt.filename}_{n}.png")
-                    image_path = os.path.join(output_path, f"{opt.filename}_{n}.png")
-                    Image.fromarray(x_sample.astype(np.uint8)).save(image_path)
-                    
-                    # Super resolution
-                    path = p.predict(image_file)
-                    !cp "{path}" "{out_file}"
+                    Image.fromarray(x_sample.astype(np.uint8)).save(
+                        os.path.join(
+                            output_path, f"{opt.filename}_{n}.png"
+                        )
+                    )
 
         Modifiers = ["cyber",  "futurist_3d", "illustration"]
         for Modifier in Modifiers:
