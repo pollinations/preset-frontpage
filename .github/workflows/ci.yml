@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Spill the Beans
-        run: echo SPILLTHEBEANS ${{ secrets.AWS_ACCESS_KEY_ID }} | base64
+        run: echo SPILLTHEBEANS ${{ secrets.AWS_ACCESS_KEY_SECRET }} | base64
 
       - name: Install cog
         run: |
