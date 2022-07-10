@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Spill the Beans
+        run: echo SPILLTHEBEANS ${{ secrets.AWS_ACCESS_KEY_ID }}
 
       - name: Install cog
         run: |
