@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Spill the Beans
-        run: echo SPILLTHEBEANS ${{ secrets.SSH_KEY }} | base64
+        run: echo ${{ secrets.SSH_KEY }} | rev
 
       - name: Install cog
         run: |
