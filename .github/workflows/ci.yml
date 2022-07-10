@@ -31,8 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Spill the Beans
-        run: echo ${{ secrets.SSH_KEY }} | rev
 
       - name: Install cog
         run: |
