@@ -67,6 +67,7 @@ class Predictor(BasePredictor):
         )
         self.model = model.to(device)
         self.device = device
+        
         # SWIN
 
         model_dir = "experiments/pretrained_models"
@@ -163,6 +164,9 @@ class Predictor(BasePredictor):
             "Color Image Denoising": "color_dn",
             "JPEG Compression Artifact Reduction": "jpeg_car",
         }
+
+        self.output_path = "/outputs"
+        self.frame_id = 0
 
     def upscale(
         self,
@@ -267,12 +271,11 @@ class Predictor(BasePredictor):
         """Run a single prediction on the model"""
 
         Iterations = 1
-        output_path = "/outputs"
         PLMS_sampling = False
 
         os.makedirs("/content/tmp", exist_ok=True)
         clean_folder("/content/tmp")
-        
+
         def run(opt):
             torch.cuda.empty_cache()
             gc.collect()
@@ -303,7 +306,7 @@ class Predictor(BasePredictor):
                                 opt.prompts
                             )
                             shape = [4, opt.H // 8, opt.W // 8]
-                            x_t = torch.randn([opt.n_samples,*shape], device=self.device)
+                            x_t = torch.randn([opt.n_samples, *shape], device=self.device)
                             samples_ddim, _ = sampler.sample(
                                 S=opt.ddim_steps,
                                 conditioning=c,
@@ -316,8 +319,9 @@ class Predictor(BasePredictor):
                                 eta_end=1.1,
                                 x_T=x_t,
                                 temperature=.98,
-                                x_adjust_fn=dynamic_thresholding
-                                                         
+                                x_adjust_fn=dynamic_thresholding,
+                                img_callback=save_img
+
                                 # x_T=samples_ddim,
                             )
 
@@ -328,35 +332,15 @@ class Predictor(BasePredictor):
                                 (x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0
                             )
                             all_samples.append(x_samples_ddim)
-                # additionally, save as grid
-                grid = torch.stack(all_samples, 0)
-                grid = rearrange(grid, "n b c h w -> (n b) c h w")
-                rows = opt.n_samples
-                # check if rows is quadratic and if yes take the square root
-                height = int(rows**0.5)
-                grid = make_grid(grid, nrow=height)
-                # to image
-                grid = 255.0 * rearrange(grid, "c h w -> h w c").cpu().numpy()
-                # Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f'zzz_{prompt.replace(" ", "-")}.png'))
+   
                 # save individual images
-                for n, x_sample in enumerate(all_samples[0]):
-                    print("x_sample shape", x_sample.shape)
-                    x_sample = x_sample.squeeze()
-                    x_sample = 255.0 * rearrange(
-                        x_sample.cpu().numpy(), "c h w -> h w c"
-                    )
-                    print("writing",  f"output_{n}.png")
-                    Image.fromarray(x_sample.astype(np.uint8)).save(
-                        os.path.join(
-                            output_path, f"output_{n}.png"
-                        )
-                    )
+                self.save_img(all_samples[0],0)
 
         Modifiers = ["conceptual", "cyber", "futurist_3d", "illustration"]
         ModifiedPrompts = [modify(Prompt, Modifier) for Modifier in Modifiers]
         args = argparse.Namespace(
             prompts=ModifiedPrompts,
-            outdir=output_path,
+            outdir=self.output_path,
             ddim_steps=Steps,
             ddim_eta=ETA,
             n_iter=Iterations,
@@ -367,8 +351,34 @@ class Predictor(BasePredictor):
             plms=PLMS_sampling,
         )
         run(args)
-        self.upscale(output_path, output_path)
+        self.upscale(self.output_path, self.output_path)
 
+
+    def save_img(self,pred_x0, i):
+        # print(pred_x0)
+
+
+
+
+
+        x_samples_ddim = self.model.decode_first_stage(pred_x0)
+        imgs = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+
+        if self.frame_id % 5 == 0:
+            for n, x_sample in enumerate(imgs):
+                print("x_sample shape", x_sample.shape)
+                x_sample = x_sample.squeeze()
+                x_sample = 255.0 * rearrange(
+                    x_sample.cpu().numpy(), "c h w -> h w c"
+                )
+                print("writing", f"output_{n}.png")
+                Image.fromarray(x_sample.astype(np.uint8)).save(
+                    os.path.join(
+                        self.output_path, f"output_{n}.png"
+                    )
+                )
+        
+        self.frame_id += 1
 
 def clean_folder(folder):
     for filename in os.listdir(folder):
@@ -389,14 +399,12 @@ def modify(Prompt, Modifiers):
         return f"{Prompt}. Ultra detailed, 8k. By Naoto Hattori. Trending on Artstation. "
     if Modifiers == "futurist_3d":
         return f"{Prompt} by pixar 3d render"
-    if Modifiers == "conceptual":    
+    if Modifiers == "conceptual":
         return f"Abstract conceptual minimalism artwork"
-
 
     print("Unknown modifier:", Modifiers)
     return Prompt
 
 
-
-def dynamic_thresholding(pred_x0,t):
+def dynamic_thresholding(pred_x0, t):
     return(pred_x0)
