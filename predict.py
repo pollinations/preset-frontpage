@@ -260,7 +260,7 @@ class Predictor(BasePredictor):
             description="Number of steps to run the model", default=100
         ),
         ETA: int = cog.Input(description="Can be 0 or 1", default=1),
-        Samples_in_parallel: int = cog.Input(description="Batch size", default=1),
+        Samples_in_parallel: int = cog.Input(description="Batch size", default=4),
         Diversity_scale: float = cog.Input(
             description="As a rule of thumb, higher values of scale produce better samples at the cost of a reduced output diversity.",
             default=10.0,
@@ -334,7 +334,7 @@ class Predictor(BasePredictor):
                             all_samples.append(x_samples_ddim)
    
                 # save individual images
-                self.save_img(all_samples[0],0)
+                self.save_img(all_samples[0],0, force_save=True)
 
         Modifiers = ["conceptual", "cyber", "futurist_3d", "illustration"]
         ModifiedPrompts = [modify(Prompt, Modifier) for Modifier in Modifiers]
@@ -354,7 +354,7 @@ class Predictor(BasePredictor):
         self.upscale(self.output_path, self.output_path)
 
 
-    def save_img(self,pred_x0, i):
+    def save_img(self,pred_x0, i, force_save=False):
         # print(pred_x0)
 
 
@@ -364,7 +364,7 @@ class Predictor(BasePredictor):
         x_samples_ddim = self.model.decode_first_stage(pred_x0)
         imgs = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
-        if self.frame_id % 5 == 0:
+        if self.frame_id % 5 == 0 or force_save:
             for n, x_sample in enumerate(imgs):
                 print("x_sample shape", x_sample.shape)
                 x_sample = x_sample.squeeze()
