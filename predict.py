@@ -320,7 +320,7 @@ class Predictor(BasePredictor):
                                 x_T=x_t,
                                 temperature=.98,
                                 x_adjust_fn=dynamic_thresholding,
-                                img_callback=save_img
+                                img_callback=self.save_img
 
                                 # x_T=samples_ddim,
                             )
