@@ -256,7 +256,7 @@ class Predictor(BasePredictor):
             description="Number of steps to run the model", default=100
         ),
         ETA: int = cog.Input(description="Can be 0 or 1", default=1),
-        Samples_in_parallel: int = cog.Input(description="Batch size", default=4),
+        Samples_in_parallel: int = cog.Input(description="Batch size", default=1),
         Diversity_scale: float = cog.Input(
             description="As a rule of thumb, higher values of scale produce better samples at the cost of a reduced output diversity.",
             default=10.0,
@@ -298,10 +298,9 @@ class Predictor(BasePredictor):
                             uc = self.model.get_learned_conditioning(
                                 opt.n_samples * [""]
                             )
-                        prompt = opt.prompt
                         for n in range(opt.n_iter):
                             c = self.model.get_learned_conditioning(
-                                opt.n_samples * [prompt]
+                                opt.prompts
                             )
                             shape = [4, opt.H // 8, opt.W // 8]
                             x_t = torch.randn([opt.n_samples,*shape], device=self.device)
@@ -346,31 +345,28 @@ class Predictor(BasePredictor):
                     x_sample = 255.0 * rearrange(
                         x_sample.cpu().numpy(), "c h w -> h w c"
                     )
-                    print("writing",  f"{opt.filename}_{n}.png")
+                    print("writing",  f"output_{n}.png")
                     Image.fromarray(x_sample.astype(np.uint8)).save(
                         os.path.join(
-                            output_path, f"{opt.filename}_{n}.png"
+                            output_path, f"output_{n}.png"
                         )
                     )
 
-        Modifiers = ["cyber",  "futurist_3d", "illustration"]
-        for Modifier in Modifiers:
-            ModifiedPrompt = modify(Prompt, Modifier)
-            print("ModifiedPrompt", ModifiedPrompt)
-            args = argparse.Namespace(
-                prompt=ModifiedPrompt,
-                filename=Modifier+"_"+Prompt.replace(" " , "-"),
-                outdir=output_path,
-                ddim_steps=Steps,
-                ddim_eta=ETA,
-                n_iter=Iterations,
-                W=Width,
-                H=Height,
-                n_samples=Samples_in_parallel,
-                scale=Diversity_scale,
-                plms=PLMS_sampling,
-            )
-            run(args)
+        Modifiers = ["conceptual", "cyber", "futurist_3d", "illustration"]
+        ModifiedPrompts = [modify(Prompt, Modifier) for Modifier in Modifiers]
+        args = argparse.Namespace(
+            prompts=ModifiedPrompts,
+            outdir=output_path,
+            ddim_steps=Steps,
+            ddim_eta=ETA,
+            n_iter=Iterations,
+            W=Width,
+            H=Height,
+            n_samples=Samples_in_parallel,
+            scale=Diversity_scale,
+            plms=PLMS_sampling,
+        )
+        run(args)
         self.upscale(output_path, output_path)
 
 
@@ -390,9 +386,13 @@ def modify(Prompt, Modifiers):
     if Modifiers == "cyber":
         return f"{Prompt}. Cyber. Digital art by michael whelan"
     if Modifiers == "illustration":
-        return f"{Prompt}. Ultra detailed, 8k. By Naoto Hattori. Trending on Artstation. {Prompt}."
+        return f"{Prompt}. Ultra detailed, 8k. By Naoto Hattori. Trending on Artstation. "
     if Modifiers == "futurist_3d":
-        return f"{Prompt} {Prompt} by pixar 3d render"
+        return f"{Prompt} by pixar 3d render"
+    if Modifiers == "conceptual":    
+        return f"Abstract conceptual minimalism artwork"
+
+
     print("Unknown modifier:", Modifiers)
     return Prompt
 
