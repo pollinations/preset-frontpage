@@ -372,7 +372,7 @@ class Predictor(BasePredictor):
                 x_sample = 255.0 * rearrange(
                     x_sample.cpu().numpy(), "c h w -> h w c"
                 )
-                #print("writing", f"output_{n}.png")
+                print("writing", f"output_{n}.png")
                 Image.fromarray(x_sample.astype(np.uint8)).save(
                     os.path.join(
                         self.output_path, f"output_{n}.png"
@@ -401,7 +401,7 @@ def modify(Prompt, Modifiers):
     if Modifiers == "futurist_3d":
         return f"{Prompt} by pixar 3d render"
     if Modifiers == "conceptual":
-        return f"Abstract conceptual minimalism artwork"
+        return f"{Prompt}. Abstract conceptual minimalism"
 
     print("Unknown modifier:", Modifiers)
     return Prompt
