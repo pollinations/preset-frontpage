@@ -365,7 +365,7 @@ class Predictor(BasePredictor):
         x_samples_ddim = self.model.decode_first_stage(pred_x0)
         imgs = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
-        if self.frame_id % 20 == 0 or self.frame_id >= self.Steps - 1:
+        if self.frame_id % 7 == 0 or self.frame_id >= self.Steps - 1:
             for n, x_sample in enumerate(imgs):
                 #print("x_sample shape", x_sample.shape)
                 x_sample = x_sample.squeeze()
