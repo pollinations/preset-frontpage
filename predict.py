@@ -333,8 +333,7 @@ class Predictor(BasePredictor):
                             )
                             all_samples.append(x_samples_ddim)
    
-                # save individual images
-                self.save_img(all_samples[0],0, force_save=True)
+
 
         Modifiers = ["conceptual", "cyber", "futurist_3d", "illustration"]
         ModifiedPrompts = [modify(Prompt, Modifier) for Modifier in Modifiers]
@@ -366,12 +365,12 @@ class Predictor(BasePredictor):
 
         if self.frame_id % 5 == 0 or force_save:
             for n, x_sample in enumerate(imgs):
-                print("x_sample shape", x_sample.shape)
+                #print("x_sample shape", x_sample.shape)
                 x_sample = x_sample.squeeze()
                 x_sample = 255.0 * rearrange(
                     x_sample.cpu().numpy(), "c h w -> h w c"
                 )
-                print("writing", f"output_{n}.png")
+                #print("writing", f"output_{n}.png")
                 Image.fromarray(x_sample.astype(np.uint8)).save(
                     os.path.join(
                         self.output_path, f"output_{n}.png"
