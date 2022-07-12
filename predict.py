@@ -337,7 +337,7 @@ class Predictor(BasePredictor):
    
 
 
-        Modifiers = ["conceptual", "cyber", "futurist_3d", "illustration"]
+        Modifiers = ["conceptual", "futurist_3d", "illustration"]
         ModifiedPrompts = [modify(Prompt, Modifier) for Modifier in Modifiers]
         args = argparse.Namespace(
             prompts=ModifiedPrompts,
