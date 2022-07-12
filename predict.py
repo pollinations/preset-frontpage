@@ -270,6 +270,8 @@ class Predictor(BasePredictor):
     ) -> None:
         """Run a single prediction on the model"""
 
+        self.Steps = Steps
+
         Iterations = 1
         PLMS_sampling = False
 
@@ -353,7 +355,7 @@ class Predictor(BasePredictor):
         self.upscale(self.output_path, self.output_path)
 
 
-    def save_img(self,pred_x0, i, force_save=False):
+    def save_img(self,pred_x0, i):
         # print(pred_x0)
 
 
@@ -363,7 +365,7 @@ class Predictor(BasePredictor):
         x_samples_ddim = self.model.decode_first_stage(pred_x0)
         imgs = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
-        if self.frame_id % 5 == 0 or force_save:
+        if self.frame_id % 20 == 0 or self.frame_id >= self.Steps - 1:
             for n, x_sample in enumerate(imgs):
                 #print("x_sample shape", x_sample.shape)
                 x_sample = x_sample.squeeze()
