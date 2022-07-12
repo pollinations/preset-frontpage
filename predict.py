@@ -260,7 +260,7 @@ class Predictor(BasePredictor):
             description="Number of steps to run the model", default=100
         ),
         ETA: int = cog.Input(description="Can be 0 or 1", default=1),
-        Samples_in_parallel: int = cog.Input(description="Batch size", default=4),
+        Samples_in_parallel: int = cog.Input(description="Batch size", default=3),
         Diversity_scale: float = cog.Input(
             description="As a rule of thumb, higher values of scale produce better samples at the cost of a reduced output diversity.",
             default=10.0,
